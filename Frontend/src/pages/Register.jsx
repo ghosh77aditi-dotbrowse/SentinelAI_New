@@ -40,8 +40,9 @@ export default function Register() {
       await registerCompany(form)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.message || 'Registration failed.')
-    } finally {
+      console.log(err.response?.data);
+      setError(err.response?.data?.message || err.message || 'Registration failed.');
+  } finally {
       setLoading(false)
     }
   }

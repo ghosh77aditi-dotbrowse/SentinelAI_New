@@ -1,6 +1,7 @@
-import { useState } from 'react'
+
 import { UserPlus, MoreVertical, X } from 'lucide-react'
-import { teamUsers as initialTeam } from '../data/mockData.js'
+import { useState, useEffect } from 'react'
+import axiosClient from '../api/axiosClient'
 
 const STATUS_STYLES = {
   Active: 'bg-signal/10 text-signal border-signal/30',
@@ -9,24 +10,68 @@ const STATUS_STYLES = {
 }
 
 export default function Users() {
-  const [team, setTeam] = useState(initialTeam)
-  const [showInvite, setShowInvite] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', role: 'Security Analyst' })
+  const [team, setTeam] = useState([])
+  useEffect(() => {
+  loadUsers()
+}, [])
 
-  const invite = (e) => {
-    e.preventDefault()
-    setTeam((prev) => [{ id: Date.now(), ...form, status: 'Invited', lastLogin: '—' }, ...prev])
-    setForm({ name: '', email: '', role: 'Security Analyst' })
-    setShowInvite(false)
-  }
+const loadUsers = async () => {
+  try {
+    const res = await axiosClient.get("/users")
 
-  const cycleStatus = (id) => {
-    setTeam((prev) => prev.map((u) => {
-      if (u.id !== id) return u
-      const next = u.status === 'Active' ? 'Suspended' : 'Active'
-      return { ...u, status: next }
+    const formatted = res.data.map(u => ({
+      _id: u._id,
+      name: u.username,
+      email: u.useremail,
+      role: u.role,
+      status: "Active",
+      lastLogin: "—"
     }))
+
+    setTeam(formatted)
+  } catch (err) {
+    console.error(err)
   }
+}
+  const [showInvite, setShowInvite] = useState(false)
+  const [form, setForm] = useState({
+  name: '',
+  email: '',
+  password: '',
+  role: 'Security Analyst'
+})
+
+  const invite = async (e) => {
+  e.preventDefault()
+
+  try {
+    await axiosClient.post("/users", {
+  username: form.name,
+  useremail: form.email,
+  userpassword: form.password,
+  role:
+    form.role === "Company Admin"
+      ? "ADMIN"
+      : "SECURITY_ANALYST"
+})
+
+    await loadUsers()
+
+    setForm({
+  name: "",
+  email: "",
+  password: "",
+  role: "Security Analyst"
+})
+
+    setShowInvite(false)
+
+  } catch (err) {
+    console.error(err)
+    alert(err.response?.data?.message || "Unable to create user")
+  }
+}
+
 
   return (
     <div className="space-y-5">
@@ -53,7 +98,7 @@ export default function Users() {
           </thead>
           <tbody>
             {team.map((u) => (
-              <tr key={u.id} className="border-b border-hairline last:border-0 hover:bg-elevated transition-colors">
+              <tr key={u._id} className="border-b border-hairline last:border-0 hover:bg-elevated transition-colors">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-elevated2 flex items-center justify-center text-[11px] font-semibold text-ink shrink-0">
@@ -63,14 +108,15 @@ export default function Users() {
                   </div>
                 </td>
                 <td className="px-5 py-3.5 text-muted hidden sm:table-cell">{u.email}</td>
-                <td className="px-5 py-3.5 text-muted">{u.role}</td>
+                <td className="px-5 py-3.5 text-muted">
+  {u.role === "ADMIN" ? "Company Admin" : "Security Analyst"}
+</td>
                 <td className="px-5 py-3.5">
                   <button
-                    onClick={() => cycleStatus(u.id)}
-                    className={`px-2.5 py-1 rounded-md border text-xs font-medium ${STATUS_STYLES[u.status]}`}
-                  >
-                    {u.status}
-                  </button>
+  className="px-2.5 py-1 rounded-md border text-xs font-medium bg-signal/10 text-signal border-signal/30"
+>
+  Active
+</button>
                 </td>
                 <td className="px-5 py-3.5 text-muted font-sans hidden md:table-cell">{u.lastLogin}</td>
                 <td className="px-5 py-3.5 text-right">
@@ -98,12 +144,33 @@ export default function Users() {
                 <label className="block text-xs font-medium text-muted mb-1.5">Work email</label>
                 <input required type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className="w-full bg-elevated border border-hairline rounded-lg px-3.5 py-2.5 text-sm text-ink focus:border-signal transition-colors" />
               </div>
+
+              <div>
+  <label className="block text-xs font-medium text-muted mb-1.5">
+    Password
+  </label>
+
+  <input
+    required
+    type="password"
+    value={form.password}
+    onChange={(e) =>
+      setForm((f) => ({
+        ...f,
+        password: e.target.value
+      }))
+    }
+    className="w-full bg-elevated border border-hairline rounded-lg px-3.5 py-2.5 text-sm text-ink focus:border-signal transition-colors"
+  />
+</div>
+
+
+
               <div>
                 <label className="block text-xs font-medium text-muted mb-1.5">Role</label>
                 <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} className="w-full bg-elevated border border-hairline rounded-lg px-3.5 py-2.5 text-sm text-ink focus:border-signal transition-colors">
                   <option>Company Admin</option>
                   <option>Security Analyst</option>
-                  <option>Viewer</option>
                 </select>
               </div>
               <button type="submit" className="w-full bg-signal text-void font-semibold text-sm rounded-lg py-2.5 hover:bg-signal-dim transition-colors mt-2">

@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
-// import axiosClient from '../api/axiosClient.js'
+import axiosClient from '../api/axiosClient.js'
 
 export default function UploadLogs() {
   const inputRef = useRef(null)
@@ -46,20 +46,37 @@ export default function UploadLogs() {
   }
 
   const runPipeline = async () => {
-    if (!files.length) return
+  if (!files.length) return;
 
-    setProcessing(true)
-    setDone(false)
+  setProcessing(true);
+  setDone(false);
 
-    // const formData = new FormData()
-    // files.forEach(f => formData.append("logs", f.file))
-    // await axiosClient.post("/logs/upload", formData)
+  try {
+    const formData = new FormData();
 
-    await new Promise((r) => setTimeout(r, 1500))
+    formData.append("file", files[0].file);
 
-    setProcessing(false)
-    setDone(true)
+    const response = await axiosClient.post(
+      "/activity/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log(response.data);
+
+    setDone(true);
+
+  } catch (err) {
+    console.error(err);
+    alert("Upload Failed");
   }
+
+  setProcessing(false);
+};
 
   return (
     <div className="mx-auto w-full max-w-5xl px-8 py-8">

@@ -9,16 +9,20 @@ const {
     getAdminActivityTrend,
     getAdminRiskDistribution,
     getAdminUserStatistics,
+    getAdminDashboard,
 
     getAnalystSummary,
     getRecentAlerts,
     getHighRiskUsers,
     getAnomalyTrend,
-    getRiskScores
+    getRiskScores,
+
+    getAnalystDashboard
 
 } = require("../controllers/dashboard.controller");
 
 
+router.get("/admin", authMiddleware, isAdmin, getAdminDashboard);
 router.get("/admin/summary",authMiddleware,isAdmin,getAdminSummary);
 router.get("/admin/recent-activities",authMiddleware,isAdmin,getAdminRecentActivities);
 router.get("/admin/activity-trend",authMiddleware,isAdmin,getAdminActivityTrend);
@@ -31,5 +35,11 @@ router.get("/analyst/recent-alerts",authMiddleware,isSecurityAnalyst,getRecentAl
 router.get( "/analyst/high-risk-users",authMiddleware,isSecurityAnalyst,getHighRiskUsers);
 router.get("/analyst/anomaly-trend",authMiddleware,isSecurityAnalyst,getAnomalyTrend);
 router.get("/analyst/risk-scores",authMiddleware,isSecurityAnalyst,getRiskScores);
+router.get(
+    "/analyst",
+    authMiddleware,
+    isSecurityAnalyst,
+    getAnalystDashboard
+);
 
 module.exports = router;

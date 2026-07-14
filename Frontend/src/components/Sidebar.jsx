@@ -4,8 +4,6 @@ import {
   UploadCloud,
   ShieldAlert,
   Radar,
-  BellRing,
-  FileBarChart2,
   Users,
   Settings,
   Search
@@ -17,23 +15,19 @@ const adminLinks = [
   { to: '/upload', label: 'Upload Activity Logs', icon: UploadCloud },
   { to: '/risk-analysis', label: 'Risk Analysis', icon: ShieldAlert },
   { to: '/anomalies', label: 'Anomalies', icon: Radar },
-  { to: '/alerts', label: 'Alerts', icon: BellRing },
-  { to: '/reports', label: 'Reports', icon: FileBarChart2 },
   { to: '/users', label: 'Manage Users', icon: Users },
   { to: '/settings', label: 'Settings', icon: Settings }
 ]
 
 const analystLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: "/risk-analysis", label: "Risk Analysis", icon: ShieldAlert },
   { to: '/anomalies', label: 'Anomalies', icon: Radar },
-  { to: '/risk-analysis', label: 'Investigate Users', icon: ShieldAlert },
-  { to: '/alerts', label: 'Alerts', icon: BellRing },
-  { to: '/reports', label: 'Reports', icon: FileBarChart2 }
 ]
 
 export default function Sidebar() {
   const { user } = useAuth()
-  const links = user?.role === 'security_analyst' ? analystLinks : adminLinks
+  const links = user?.role === 'SECURITY_ANALYST' ? analystLinks : adminLinks
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-2 border-r border-hairline bg-surface">
@@ -55,7 +49,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <p className="px-3 pb-2 text-[17px] togglecase tracking-wider text-white font-bold">
-          {user?.role === 'security_analyst' ? 'Analyst workspace' : 'Admin workspace'}
+          {user?.role === 'SECURITY_ANALYST' ? 'Analyst workspace' : 'Admin workspace'}
         </p>
         {links.map(({ to, label, icon: Icon }) => (
           <NavLink

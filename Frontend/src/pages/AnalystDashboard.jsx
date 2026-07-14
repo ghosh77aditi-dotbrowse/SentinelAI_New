@@ -2,13 +2,12 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import axiosClient from '../api/axiosClient'
 
-import {LineChart,Line,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell,BarChart,Bar} from 'recharts'
+import {LineChart,Line,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid,PieChart,Pie,Cell} from 'recharts'
 
 import {
   Users,
   ShieldAlert,
-  Radar,
-  ArrowUpRight
+  Radar
 } from 'lucide-react'
 
 import StatCard from '../components/StatCard.jsx'
@@ -28,7 +27,7 @@ export default function Dashboard() {
 
       try {
 
-        const response = await axiosClient.get("/dashboard/admin")
+        const response = await axiosClient.get("/dashboard/analyst")
 
         setDashboardData(response.data)
 
@@ -49,9 +48,6 @@ export default function Dashboard() {
   const topRisk = dashboardData?.users ?? []
 
   const alerts = dashboardData?.recentActivities ?? []
-
-  const detectionCategories =
-    dashboardData?.detectionCategories ?? []
 
   const realRiskDistribution =
     dashboardData
@@ -96,9 +92,6 @@ export default function Dashboard() {
           {user?.username}
           </span>. Here's the current risk posture for {user?.companyName}.
         </p>
-        <Link to="/upload" className="inline-flex items-center gap-1.5 text-xs font-medium text-signal border border-signal/30 bg-signal/10 rounded-lg px-3 py-1.5 hover:bg-signal/20 transition-colors">
-          Upload new logs <ArrowUpRight size={15} />
-        </Link>
       </div>
 
       {/* KPI row */}
@@ -124,17 +117,35 @@ export default function Dashboard() {
 
   {/* Remaining three, smaller, stacked beside it */}
   <div className="xl:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-5">
-    <StatCard icon={Users} label="Monitored identities" value={dashboardData?.summary?.totalUsers ?? 0} delta="+12 this week" deltaTone="signal" sublabel="Across 6 departments" />
-    <StatCard icon={ShieldAlert} label="Critical risk users" value={dashboardData?.summary?.highRiskUsers ?? 0} delta="+3 vs last week" deltaTone="risk" sublabel="Score ≥ 80" />
-    <StatCard
-      icon={Radar}
-      label="Anomalies today"
-      value={dashboardData?.summary?.totalAnomalies ?? 0}
-      delta="+5 vs yesterday"
-      deltaTone="risk"
-      sublabel="6 anomaly types tracked"
-    />
-  </div>
+
+  <StatCard
+    icon={Users}
+    label="High Risk Users"
+    value={dashboardData?.summary?.highRiskUsers ?? 0}
+    delta=""
+    deltaTone="signal"
+    sublabel="Currently under investigation"
+  />
+
+  <StatCard
+    icon={ShieldAlert}
+    label="Critical Alerts"
+    value={dashboardData?.summary?.criticalAlerts ?? 0}
+    delta=""
+    deltaTone="risk"
+    sublabel="Highest priority alerts"
+  />
+
+  <StatCard
+    icon={Radar}
+    label="Detected Anomalies"
+    value={dashboardData?.summary?.totalAnomalies ?? 0}
+    delta=""
+    deltaTone="risk"
+    sublabel="Across uploaded logs"
+  />
+
+</div>
 </div>
 
       {/* Charts row */}
@@ -142,9 +153,13 @@ export default function Dashboard() {
         <div className="card p-6 xl:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-display font-semibold text-ink text-sm">Risk trend (7 days)
+              <h3 className="font-display font-semibold text-ink text-sm">
+                Activity Trend (7 Days)
               </h3>
-              <p className="text-xs text-faint">Average risk score vs. incident count</p>
+
+              <p className="text-xs text-faint">
+                User activities recorded each day
+              </p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={240}>
@@ -235,52 +250,47 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Alerts feed */}
-          <div className="card p-6">
-    <h3 className="font-display font-semibold text-ink text-sm mb-4">
-        Recent Activities
-    </h3>
-              {alerts.slice(0,5).map((a,index)=> (
-    <div key={index} className="flex items-center gap-4">
+{/* Recent Activities */}
+<div className="card p-6">
+  <h3 className="font-display font-semibold text-ink text-sm mb-4">
+    Recent Activities
+  </h3>
+
+  {alerts.length === 0 ? (
+    <p className="text-sm text-muted">
+      No recent activities found.
+    </p>
+  ) : (
+    alerts.slice(0, 5).map((a, index) => (
+      <div key={index} className="flex items-center gap-4 mb-4">
         <div className="flex items-center justify-center w-14 h-14 shrink-0">
-            <RiskGauge
-                score={15}
-                size={52}
-                strokeWidth={4}
-            />
+          <RiskGauge
+            score={
+              topRisk.find(
+                (u) => u.employeeName === a.employeeName
+              )?.riskScore || 0
+            }
+            size={52}
+            strokeWidth={4}
+          />
         </div>
 
-                  <div className="flex-1">
-                     <p className="text-sm font-semibold text-ink leading-tight">
-                         Activity Log
-                    </p>
-                       <p className="text-sm text-faint mt-1">
-                           {a.employeeName} · {new Date(a.createdAt).toLocaleString()}
-                      </p>
-              </div>
-             </div>
-             ))}
-           </div>
-          </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-ink leading-tight">
+            Activity Log
+          </p>
 
-      {/* Anomaly type breakdown */}
-      <div className="card p-7">
-        <h3 className="font-display font-semibold text-ink text-sm mb-1">Detection categories</h3>
-        <p className="text-xs text-white mb-4">Count by detection category</p>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart
-    data={detectionCategories}
-    layout="vertical"
-    margin={{ left: 10 }}
->
-            <CartesianGrid stroke="#98adca" horizontal={false} />
-            <XAxis type="number" stroke="#aebed8" fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis type="category" dataKey="type" stroke="#e9f1fc" fontSize={11} tickLine={false} axisLine={false} width={120} />
-            <Tooltip cursor={{ fill: '#6d7b90' }} />
-            <Bar dataKey="count" name="Anomalies" fill="#6b93e2" radius={[0, 4, 4, 0]} barSize={18} />
-          </BarChart>
-        </ResponsiveContainer>
+          <p className="text-sm text-faint mt-1">
+            {a.employeeName} ·{" "}
+            {new Date(a.createdAt).toLocaleString()}
+          </p>
+        </div>
       </div>
-    </div>
+    ))
+  )}
+</div>
+</div> {/* End grid */}
+
+    </div> 
   )
 }

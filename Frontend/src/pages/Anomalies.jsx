@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import axiosClient from '../api/axiosClient'
 import { Link } from 'react-router-dom'
 import { Search, X, ExternalLink } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge.jsx'
-import { anomalies as allAnomalies } from '../data/mockData.js'
+
 
 const STATUS_STYLES = {
   Open: 'text-risk-critical',
@@ -14,6 +15,47 @@ export default function Anomalies() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('All')
   const [selected, setSelected] = useState(null)
+const [allAnomalies, setAllAnomalies] = useState([])
+useEffect(() => {
+  loadAnomalies()
+}, [])
+
+const loadAnomalies = async () => {
+  try {
+    const res = await axiosClient.get("/dashboard/admin/recent-activities")
+
+    const formatted = res.data.map((a) => ({
+      id: a._id,
+      user: a.employeeName,
+      userId: a.userId,
+      type:
+        a.failedLogins > 3
+          ? "Failed Login"
+          : a.usbUsage > 0
+          ? "USB Usage"
+          : a.dataTransferred > 500
+          ? "Large Data Transfer"
+          : "Suspicious Activity",
+
+      severity:
+        a.failedLogins > 5
+          ? "Critical"
+          : a.failedLogins > 3
+          ? "High"
+          : "Medium",
+
+      status: "Open",
+
+      time: new Date(a.createdAt).toLocaleString(),
+
+      detail: `IP: ${a.ipAddress} | Country: ${a.country}`
+    }))
+
+    setAllAnomalies(formatted)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
   const filtered = useMemo(() => {
     return allAnomalies.filter((a) =>
