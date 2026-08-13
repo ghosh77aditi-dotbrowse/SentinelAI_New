@@ -165,3 +165,6 @@ Example evaluation metrics:
 
 - Ananya Chakraborty
 - Rushati Ray
+- Aditi Ghosh
+- Anuska Ghosh
+- Madhurima Dutta
